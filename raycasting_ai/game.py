@@ -39,7 +39,15 @@ class Game:
         self.clock = pygame.time.Clock()
         self.world = World()
         self.player = Player()
-        self.renderer = Renderer(RENDER_WIDTH, RENDER_HEIGHT)
+
+        # Match the internal render target to the device aspect ratio. This avoids
+        # stretching round buttons into ovals on extra-wide phone screens.
+        display_width, display_height = self.window.get_size()
+        if self.mobile and display_width > 0:
+            render_height = max(180, round(RENDER_WIDTH * display_height / display_width))
+        else:
+            render_height = RENDER_HEIGHT
+        self.renderer = Renderer(RENDER_WIDTH, render_height)
         self.enemies = [Enemy(15.5, 2.5), Enemy(17.5, 12.5), Enemy(4.5, 13.5)]
 
         self.ammo = WEAPON_MAGAZINE
@@ -49,8 +57,8 @@ class Game:
 
         # SDL finger IDs let a player move, aim and fire with different fingers.
         self.fingers = {}
-        self.joystick_center = (RENDER_WIDTH * 0.16, RENDER_HEIGHT * 0.79)
-        self.joystick_radius = RENDER_HEIGHT * 0.125
+        self.joystick_center = (self.renderer.width * 0.16, self.renderer.height * 0.79)
+        self.joystick_radius = self.renderer.height * 0.125
         self.touch_forward = 0.0
         self.touch_strafe = 0.0
         self.touch_sprint = False
