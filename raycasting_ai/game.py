@@ -1,7 +1,7 @@
 """Pygame game loop with desktop and Android touch controls."""
 import os
 import sys
-from math import atan2, cos, hypot, sin
+from math import atan2, cos, hypot, sin, tau
 import pygame
 from .config import *
 from .entities import Enemy, Player, normalize_angle
@@ -10,11 +10,13 @@ from .world import World
 
 
 def running_on_android():
-    # Pydroid builds can report either "android" or "linux" as sys.platform.
+    # Android/Pydroid environments do not all expose the same sys.platform value.
     return (
         sys.platform == "android"
-        or "ANDROID_ARGUMENT" in os.environ
-        or "ANDROID_ROOT" in os.environ
+        or any(name in os.environ for name in (
+            "ANDROID_ARGUMENT", "ANDROID_ROOT", "ANDROID_DATA", "ANDROID_STORAGE"
+        ))
+        or os.path.isdir("/system/bin")
     )
 
 
@@ -22,15 +24,16 @@ class Game:
     def __init__(self):
         pygame.init()
         self.mobile = running_on_android()
+        self.target_fps = MOBILE_TARGET_FPS if self.mobile else TARGET_FPS
         pygame.display.set_caption("Raycasting AI 2.1 — Touch / DDA / A*")
 
         flags = pygame.FULLSCREEN if self.mobile else pygame.RESIZABLE
         try:
-            self.window = pygame.display.set_mode((0, 0), flags) if self.mobile else pygame.display.set_mode(
-                (WINDOW_WIDTH, WINDOW_HEIGHT), flags
+            self.window = (
+                pygame.display.set_mode((0, 0), flags)
+                if self.mobile else pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags)
             )
         except pygame.error:
-            # Some SDL builds do not accept a zero-sized fullscreen request.
             self.window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags)
 
         self.clock = pygame.time.Clock()
@@ -44,17 +47,15 @@ class Game:
         self.reload_timer = 0.0
         self.running = True
 
-        # Finger IDs are stable for the lifetime of a touch. Separate fingers
-        # can therefore move, look and fire at the same time.
+        # SDL finger IDs let a player move, aim and fire with different fingers.
         self.fingers = {}
-        self.joystick_center = (78.0, 286.0)
-        self.joystick_radius = 45.0
+        self.joystick_center = (RENDER_WIDTH * 0.16, RENDER_HEIGHT * 0.79)
+        self.joystick_radius = RENDER_HEIGHT * 0.125
         self.touch_forward = 0.0
         self.touch_strafe = 0.0
         self.touch_sprint = False
         self.touch_fire = False
 
-        # Mouse capture is useful on desktop but prevents comfortable touch use.
         self.captured = not self.mobile
         if not self.mobile:
             pygame.event.set_grab(True)
@@ -103,8 +104,7 @@ class Game:
         self.touch_forward = -dy
 
     def _touch_motion(self, event):
-        finger_id = event.finger_id
-        state = self.fingers.get(finger_id)
+        state = self.fingers.get(event.finger_id)
         if state is None:
             return
         x = event.x * self.renderer.width
@@ -114,7 +114,7 @@ class Game:
             self._update_joystick(x, y)
         elif state["kind"] == "look":
             delta_x = x - state["x"]
-            self.player.angle = (self.player.angle + delta_x * 0.006) % (2 * 3.141592653589793)
+            self.player.angle = (self.player.angle + delta_x * 0.006) % tau
 
         state["x"], state["y"] = x, y
 
@@ -193,11 +193,7 @@ class Game:
         if keys[pygame.K_e]:
             self.player.angle += 1.8 * dt
 
-        sprint = (
-            keys[pygame.K_LSHIFT]
-            or keys[pygame.K_RSHIFT]
-            or self.touch_sprint
-        )
+        sprint = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT] or self.touch_sprint
         self.player.move(forward, strafe, dt, self.world, sprint)
         self.player.update_timers(dt)
 
@@ -217,7 +213,7 @@ class Game:
     def run(self):
         try:
             while self.running:
-                dt = min(self.clock.tick(TARGET_FPS) / 1000.0, 0.05)
+                dt = min(self.clock.tick(self.target_fps) / 1000.0, 0.05)
                 self.events()
                 self.update(dt)
 
