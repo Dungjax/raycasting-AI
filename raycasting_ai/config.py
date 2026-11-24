@@ -1,8 +1,11 @@
 """Shared configuration."""
 from math import pi
+
 WINDOW_WIDTH, WINDOW_HEIGHT = 960, 540
-RENDER_WIDTH, RENDER_HEIGHT = 640, 360
+# 480x270 keeps the DDA renderer light on mobile CPUs; it is scaled to display size.
+RENDER_WIDTH, RENDER_HEIGHT = 480, 270
 TARGET_FPS = 60
+MOBILE_TARGET_FPS = 45
 FOV = pi / 3
 MAX_RAY_DISTANCE = 24.0
 PLAYER_MOVE_SPEED = 3.2
