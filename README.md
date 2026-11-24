@@ -82,4 +82,4 @@ raycasting-AI/
 
 The world is a 2D tile grid. Each screen column casts one ray; DDA advances from grid boundary to grid boundary until it enters a solid tile. The renderer applies a cosine correction to the hit distance to reduce fisheye distortion. The same grid is used for collision and A* path finding, keeping the simulation deterministic and easy to test.
 
-The internal render target is 480x270 to reduce the number of rays and scale to the device display. The game targets 45 FPS on Android and 60 FPS on desktop. Visuals are procedural so a clean checkout does not need separate asset folders.
+The internal render target is 480 pixels wide to reduce the number of rays processed per frame. On Android, its height is adjusted to the display aspect ratio to avoid stretching controls on wide landscape screens. The game targets 45 FPS on Android and 60 FPS on desktop. Visuals are procedural so a clean checkout does not need separate asset folders.
