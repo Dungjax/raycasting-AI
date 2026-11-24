@@ -112,8 +112,9 @@ class Renderer:
         pygame.draw.line(self.surface, (235, 235, 220), (center_x - 7, center_y), (center_x - 2, center_y))
         pygame.draw.line(self.surface, (235, 235, 220), (center_x + 2, center_y), (center_x + 7, center_y))
 
-        # Keep the minimap in the upper-right so it does not overlap touch buttons.
-        map_x, map_y = self.width - 96, 70
+        # Put the minimap near the upper-middle; it stays clear of the action buttons
+        # on ultra-wide landscape phone displays.
+        map_x, map_y = self.width // 2 + 12, 10
         pygame.draw.rect(
             self.surface, (9, 12, 16),
             (map_x - 4, map_y - 4, world.width * 4 + 8, world.height * 4 + 8)
@@ -160,9 +161,7 @@ class Renderer:
         pygame.draw.circle(
             overlay, (230, 85, 65, 145 if touch_fire else 72), fire_center, 31
         )
-        pygame.draw.circle(
-            overlay, (210, 220, 235, 100), reload_center, 22, 2
-        )
+        pygame.draw.circle(overlay, (210, 220, 235, 100), reload_center, 22, 2)
         pygame.draw.circle(
             overlay, (210, 220, 235, 125 if touch_sprint else 65), sprint_center, 21, 2
         )
@@ -174,7 +173,10 @@ class Renderer:
         centered("FIRE", fire_center)
         centered("R", reload_center)
         centered("RUN", sprint_center)
-        overlay.blit(font.render("MOVE", True, (220, 225, 235)), (cx - 17, cy + 53))
+        overlay.blit(
+            font.render("MOVE", True, (220, 225, 235)),
+            (cx - 17, cy + int(joystick_radius) + 4)
+        )
         overlay.blit(
             font.render("DRAG RIGHT TO LOOK", True, (220, 225, 235)),
             (self.width // 2 - 74, self.height - 18)
